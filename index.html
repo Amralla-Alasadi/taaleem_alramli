@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>اللجنة المالية — مركز إسكان الرملي للتعليم الديني</title>
+  <style>
+    :root {
+      --brown: #743D1C;
+      --teal: #00937A;
+      --red-orange: #D74B36;
+      --orange: #E1943B;
+      --yellow: #DDCA5B;
+      --beige: #F4E9DF;
+      --card: #FFFFFF;
+      --text: #2A190F;
+      --muted: #6E584B;
+      --border: #E2D2C3;
+    }
+
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif; }
+
+    body {
+      margin: 0;
+      background: var(--beige);
+      color: var(--text);
+      padding-bottom: 40px;
+    }
+
+    header {
+      background: var(--brown);
+      color: #fff;
+      padding: 16px 20px;
+      border-bottom: 4px solid var(--teal);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand h1 { margin: 0; font-size: 1.15rem; font-weight: 700; }
+    .brand p { margin: 3px 0 0; font-size: 0.85rem; color: var(--beige); opacity: 0.92; }
+
+    .sync-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-badge {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 18px auto 0;
+      padding: 0 14px;
+    }
+
+    .sync-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-right: 5px solid var(--orange);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .sync-panel input {
+      flex: 1 1 280px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+    }
+
+    .tab-btn {
+      background: var(--card);
+      color: var(--brown);
+      border: 1px solid var(--border);
+      padding: 9px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: var(--teal);
+      color: #fff;
+      border-color: var(--teal);
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      border-top: 4px solid var(--brown);
+    }
+    .kpi.income { border-top-color: var(--teal); }
+    .kpi.expense { border-top-color: var(--red-orange); }
+    .kpi.balance { border-top-color: var(--orange); }
+
+    .kpi .label { font-size: 0.82rem; color: var(--muted); }
+    .kpi .val { font-size: 1.25rem; font-weight: 700; margin-top: 6px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      color: var(--brown);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #fff;
+      color: var(--text);
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: var(--teal); color: #fff; }
+    .btn-secondary { background: var(--brown); color: #fff; }
+    .btn-warn { background: var(--orange); color: #fff; }
+    .btn-danger { background: var(--red-orange); color: #fff; padding: 6px 10px; font-size: 0.8rem; }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+    }
+
+    th {
+      background: #FAF3EC;
+      color: var(--brown);
+      font-weight: 700;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px;
+      font-size: 0.9rem;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <h1>مركز إسكان الرملي للتعليم الديني — اللجنة المالية</h1>
+        <p>إدارة الحسابات والعُهد والتبرعات والموازنة والأصول (د.ب)</p>
+      </div>
+      <div class="sync-bar">
+        <span id="syncStatus" class="status-badge">محلي فقط (غير مربوط بسحابة)</span>
+        <button class="btn-warn" onclick="pullFromCloud()">تحديث من السحابة</button>
+        <button class="btn-primary" onclick="pushToCloud()">حفظ في السحابة</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="sync-panel">
+      <label for="scriptUrl" style="font-weight:700; font-size:0.88rem;">رابط Google Apps Script (/exec):</label>
+      <input id="scriptUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
+      <button class="btn-secondary" onclick="saveScriptUrl()">حفظ الرابط</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi balance">
+        <div class="label">الرصيد الافتتاحي</div>
+        <div class="val" id="kpiOpening">0.000 د.ب</div>
+      </div>
+      <div class="kpi income">
+        <div class="label">إجمالي الإيرادات والتبرعات</div>
+        <div class="val" id="kpiIncome">0.000 د.ب</div>
+      </div>
+      <div class="kpi expense">
+        <div class="label">إجمالي المصروفات</div>
+        <div class="val" id="kpiExpense">0.000 د.ب</div>
+      </div>
+      <div class="kpi">
+        <div class="label">الرصيد الحالي الصافي</div>
+        <div class="val" id="kpiNet">0.000 د.ب</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('ledger', this)">دفتر الأستاذ</button>
+      <button class="tab-btn" onclick="switchTab('petty', this)">العُهدة النثرية</button>
+      <button class="tab-btn" onclick="switchTab('donations', this)">التبرعات</button>
+      <button class="tab-btn" onclick="switchTab('budget', this)">الموازنة</button>
+      <button class="tab-btn" onclick="switchTab('assets', this)">الأصول</button>
+      <button class="tab-btn" onclick="switchTab('settings', this)">الإعدادات والرصيد الافتتاحي</button>
+    </div>
+
+    <!-- دفتر الأستاذ -->
+    <section id="sec-ledger" class="section active card">
+      <h2>إضافة حركة في دفتر الأستاذ</h2>
+      <div class="form-grid">
+        <input id="ledDate" type="date" />
+        <select id="ledType">
+          <option value="إيراد">إيراد</option>
+          <option value="مصروف">مصروف</option>
+        </select>
+        <input id="ledDesc" type="text" placeholder="البيان / الوصف" />
+        <input id="ledAmount" type="number" step="0.001" placeholder="المبلغ (د.ب)" />
+        <button class="btn-primary" onclick="addLedger()">إضافة</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>النوع</th>
+              <th>البيان</th>
+              <th>المبلغ (د.ب)</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- العهدة النثرية -->
+    <section id="sec-petty" class="section card">
+      <h2>إضافة بند عُهدة نثرية</h2>
+      <div class="form-grid">
+        <input id="petDate" type="date" />
+        <input id="petHolder" type="text" placeholder="اسم المستلم / المسؤول" />
+        <input id="petDesc" type="text" placeholder="الغرض من العُهدة" />
+        <input id="petAmount" type="number" step="0.001" placeholder="المبلغ (د.ب)" />
+        <button class="btn-primary" onclick="addPetty()">إضافة</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>المسؤول</th>
+              <th>الغرض</th>
+              <th>المبلغ (د.ب)</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="pettyBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- التبرعات -->
+    <section id="sec-donations" class="section card">
+      <h2>تسجيل تبرع</h2>
+      <div class="form-grid">
+        <input id="donDate" type="date" />
+        <input id="donDonor" type="text" placeholder="اسم المتبرع (أو فاعل خير)" />
+        <input id="donPurpose" type="text" placeholder="المخصص / البند" />
+        <input id="donAmount" type="number" step="0.001" placeholder="المبلغ (د.ب)" />
+        <button class="btn-primary" onclick="addDonation()">إضافة</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>المتبرع</th>
+              <th>المخصص</th>
+              <th>المبلغ (د.ب)</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="donationsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- الموازنة -->
+    <section id="sec-budget" class="section card">
+      <h2>بنود الموازنة التقديرية</h2>
+      <div class="form-grid">
+        <input id="budItem" type="text" placeholder="اسم البند" />
+        <input id="budAllocated" type="number" step="0.001" placeholder="المخصص (د.ب)" />
+        <input id="budSpent" type="number" step="0.001" placeholder="المصروف الفعلي (د.ب)" />
+        <button class="btn-primary" onclick="addBudget()">إضافة</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>البند</th>
+              <th>المخصص (د.ب)</th>
+              <th>المصروف (د.ب)</th>
+              <th>المتبقي (د.ب)</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="budgetBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- الأصول -->
+    <section id="sec-assets" class="section card">
+      <h2>سجل الأصول والممتلكات</h2>
+      <div class="form-grid">
+        <input id="astName" type="text" placeholder="اسم الأصل" />
+        <input id="astQty" type="number" min="1" placeholder="العدد" />
+        <input id="astValue" type="number" step="0.001" placeholder="القيمة التقديرية (د.ب)" />
+        <input id="astLoc" type="text" placeholder="الموقع / القاعة" />
+        <button class="btn-primary" onclick="addAsset()">إضافة</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>الأصل</th>
+              <th>العدد</th>
+              <th>القيمة (د.ب)</th>
+              <th>الموقع</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="assetsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- الإعدادات -->
+    <section id="sec-settings" class="section card">
+      <h2>الرصيد الافتتاحي وإدارة البيانات</h2>
+      <div class="form-grid">
+        <input id="openingInput" type="number" step="0.001" placeholder="الرصيد الافتتاحي (د.ب)" />
+        <button class="btn-secondary" onclick="saveOpening()">حفظ الرصيد الافتتاحي</button>
+        <button class="btn-danger" onclick="clearAllData()">مسح جميع البيانات</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const LOCAL_KEY = 'ramli_center_finance_v1';
+    const URL_KEY = 'ramli_center_script_url';
+
+    const emptyState = () => ({
+      openingBalance: 0,
+      ledger: [],
+      petty: [],
+      donations: [],
+      budget: [],
+      assets: []
+    });
+
+    let state = loadLocalState();
+
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(LOCAL_KEY);
+        return raw ? { ...emptyState(), ...JSON.parse(raw) } : emptyState();
+      } catch {
+        return emptyState();
+      }
+    }
+
+    function saveLocalState() {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function saveScriptUrl() {
+      const url = document.getElementById('scriptUrl').value.trim();
+      localStorage.setItem(URL_KEY, url);
+      updateSyncBadge(url ? 'جاهز للمزامنة السحابية' : 'محلي فقط (غير مربوط بسحابة)');
+    }
+
+    function updateSyncBadge(text) {
+      document.getElementById('syncStatus').textContent = text;
+    }
+
+    async function pushToCloud() {
+      const url = localStorage.getItem(URL_KEY) || document.getElementById('scriptUrl').value.trim();
+      if (!url) {
+        alert('أدخل رابط Google Apps Script أولاً.');
+        return;
+      }
+      updateSyncBadge('جارٍ الحفظ سحابيًا...');
+      try {
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ state })
+        });
+        updateSyncBadge('تم إرسال التحديث للسحابة');
+      } catch (e) {
+        updateSyncBadge('تعذر الإرسال للسحابة');
+      }
+    }
+
+    async function pullFromCloud() {
+      const url = localStorage.getItem(URL_KEY) || document.getElementById('scriptUrl').value.trim();
+      if (!url) {
+        alert('أدخل رابط Google Apps Script أولاً.');
+        return;
+      }
+      updateSyncBadge('جارٍ الجلب من السحابة...');
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.ok && data.state) {
+          state = { ...emptyState(), ...data.state };
+          saveLocalState();
+          updateSyncBadge('تمت المزامنة بنجاح');
+        } else {
+          updateSyncBadge('السحابة فارغة أو غير مهيأة');
+        }
+      } catch (e) {
+        updateSyncBadge('تعذر الجلب من السحابة');
+      }
+    }
+
+    function switchTab(tabName, btn) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sec-' + tabName).classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    function fmt(n) {
+      return Number(n || 0).toFixed(3) + ' د.ب';
+    }
+
+    function addLedger() {
+      const date = document.getElementById('ledDate').value;
+      const type = document.getElementById('ledType').value;
+      const desc = document.getElementById('ledDesc').value.trim();
+      const amount = parseFloat(document.getElementById('ledAmount').value);
+      if (!desc || isNaN(amount)) return;
+      state.ledger.push({ id: Date.now(), date, type, desc, amount });
+      document.getElementById('ledDesc').value = '';
+      document.getElementById('ledAmount').value = '';
+      saveLocalState();
+    }
+
+    function addPetty() {
+      const date = document.getElementById('petDate').value;
+      const holder = document.getElementById('petHolder').value.trim();
+      const desc = document.getElementById('petDesc').value.trim();
+      const amount = parseFloat(document.getElementById('petAmount').value);
+      if (!desc || isNaN(amount)) return;
+      state.petty.push({ id: Date.now(), date, holder, desc, amount });
+      document.getElementById('petHolder').value = '';
+      document.getElementById('petDesc').value = '';
+      document.getElementById('petAmount').value = '';
+      saveLocalState();
+    }
+
+    function addDonation() {
+      const date = document.getElementById('donDate').value;
+      const donor = document.getElementById('donDonor').value.trim();
+      const purpose = document.getElementById('donPurpose').value.trim();
+      const amount = parseFloat(document.getElementById('donAmount').value);
+      if (!purpose || isNaN(amount)) return;
+      state.donations.push({ id: Date.now(), date, donor, purpose, amount });
+      document.getElementById('donDonor').value = '';
+      document.getElementById('donPurpose').value = '';
+      document.getElementById('donAmount').value = '';
+      saveLocalState();
+    }
+
+    function addBudget() {
+      const item = document.getElementById('budItem').value.trim();
+      const allocated = parseFloat(document.getElementById('budAllocated').value) || 0;
+      const spent = parseFloat(document.getElementById('budSpent').value) || 0;
+      if (!item) return;
+      state.budget.push({ id: Date.now(), item, allocated, spent });
+      document.getElementById('budItem').value = '';
+      document.getElementById('budAllocated').value = '';
+      document.getElementById('budSpent').value = '';
+      saveLocalState();
+    }
+
+    function addAsset() {
+      const name = document.getElementById('astName').value.trim();
+      const qty = parseInt(document.getElementById('astQty').value, 10) || 1;
+      const value = parseFloat(document.getElementById('astValue').value) || 0;
+      const loc = document.getElementById('astLoc').value.trim();
+      if (!name) return;
+      state.assets.push({ id: Date.now(), name, qty, value, loc });
+      document.getElementById('astName').value = '';
+      document.getElementById('astQty').value = '';
+      document.getElementById('astValue').value = '';
+      document.getElementById('astLoc').value = '';
+      saveLocalState();
+    }
+
+    function saveOpening() {
+      state.openingBalance = parseFloat(document.getElementById('openingInput').value) || 0;
+      saveLocalState();
+    }
+
+    function removeItem(arrName, id) {
+      state[arrName] = state[arrName].filter(x => x.id !== id);
+      saveLocalState();
+    }
+
+    function clearAllData() {
+      if (confirm('هل أنت متأكد من مسح جميع البيانات المحلية؟')) {
+        state = emptyState();
+        saveLocalState();
+      }
+    }
+
+    function renderAll() {
+      const ledgerIncome = state.ledger
+        .filter(x => x.type === 'إيراد')
+        .reduce((s, x) => s + Number(x.amount || 0), 0);
+      const ledgerExpense = state.ledger
+        .filter(x => x.type === 'مصروف')
+        .reduce((s, x) => s + Number(x.amount || 0), 0);
+      const donationsTotal = state.donations.reduce((s, x) => s + Number(x.amount || 0), 0);
+      const pettyTotal = state.petty.reduce((s, x) => s + Number(x.amount || 0), 0);
+
+      const totalIncome = ledgerIncome + donationsTotal;
+      const totalExpense = ledgerExpense + pettyTotal;
+      const net = Number(state.openingBalance || 0) + totalIncome - totalExpense;
+
+      document.getElementById('kpiOpening').textContent = fmt(state.openingBalance);
+      document.getElementById('kpiIncome').textContent = fmt(totalIncome);
+      document.getElementById('kpiExpense').textContent = fmt(totalExpense);
+      document.getElementById('kpiNet').textContent = fmt(net);
+      document.getElementById('openingInput').value = state.openingBalance || '';
+
+      renderRows('ledgerBody', state.ledger, x =>
+        `<td>${x.date || '-'}</td><td>${x.type}</td><td>${x.desc}</td><td>${fmt(x.amount)}</td><td><button class="btn-danger" onclick="removeItem('ledger', ${x.id})">حذف</button></td>`
+      );
+
+      renderRows('pettyBody', state.petty, x =>
+        `<td>${x.date || '-'}</td><td>${x.holder || '-'}</td><td>${x.desc}</td><td>${fmt(x.amount)}</td><td><button class="btn-danger" onclick="removeItem('petty', ${x.id})">حذف</button></td>`
+      );
+
+      renderRows('donationsBody', state.donations, x =>
+        `<td>${x.date || '-'}</td><td>${x.donor || '-'}</td><td>${x.purpose}</td><td>${fmt(x.amount)}</td><td><button class="btn-danger" onclick="removeItem('donations', ${x.id})">حذف</button></td>`
+      );
+
+      renderRows('budgetBody', state.budget, x =>
+        `<td>${x.item}</td><td>${fmt(x.allocated)}</td><td>${fmt(x.spent)}</td><td>${fmt((x.allocated || 0) - (x.spent || 0))}</td><td><button class="btn-danger" onclick="removeItem('budget', ${x.id})">حذف</button></td>`
+      );
+
+      renderRows('assetsBody', state.assets, x =>
+        `<td>${x.name}</td><td>${x.qty}</td><td>${fmt(x.value)}</td><td>${x.loc || '-'}</td><td><button class="btn-danger" onclick="removeItem('assets', ${x.id})">حذف</button></td>`
+      );
+    }
+
+    function renderRows(tbodyId, items, rowFn) {
+      const tb = document.getElementById(tbodyId);
+      if (!items || !items.length) {
+        tb.innerHTML = '<tr><td colspan="5" class="empty">لا توجد سجلات بعد — ابدأ بإضافة أول قيد.</td></tr>';
+        return;
+      }
+      tb.innerHTML = items.map(x => `<tr>${rowFn(x)}</tr>`).join('');
+    }
+
+    const savedUrl = localStorage.getItem(URL_KEY) || '';
+    if (savedUrl) {
+      document.getElementById('scriptUrl').value = savedUrl;
+      updateSyncBadge('جاهز للمزامنة السحابية');
+      pullFromCloud();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
