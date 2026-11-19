@@ -226,7 +226,7 @@
         <p>إدارة الحسابات والعُهد والتبرعات والموازنة والأصول (د.ب)</p>
       </div>
       <div class="sync-bar">
-        <span id="syncStatus" class="status-badge">محلي فقط (غير مربوط بـ Supabase)</span>
+        <span id="syncStatus" class="status-badge">جاهز للمزامنة عبر Supabase</span>
         <button class="btn-warn" onclick="pullFromCloud()">تحديث من السحابة</button>
         <button class="btn-primary" onclick="pushToCloud()">حفظ في السحابة</button>
       </div>
@@ -236,7 +236,7 @@
   <div class="container">
     <div class="sync-panel">
       <input id="sbUrl" type="url" placeholder="Supabase Project URL (https://xxx.supabase.co)" />
-      <input id="sbKey" type="password" placeholder="Supabase anon / publishable key" />
+      <input id="sbKey" type="text" placeholder="Supabase publishable / anon key" />
       <button class="btn-secondary" onclick="saveSbConfig()">حفظ بيانات الربط</button>
     </div>
 
@@ -412,6 +412,9 @@
   </div>
 
   <script>
+    const DEFAULT_SUPABASE_URL = 'https://wtfyytnhsfbjnkjvwwut.supabase.co';
+    const DEFAULT_SUPABASE_KEY = 'sb_publishable_XH4ybRLRtQCv7gjtlI_vdA_iHXlmhpd';
+
     const LOCAL_KEY = 'ramli_center_finance_v1';
     const SUPABASE_URL_KEY = 'ramli_center_sb_url';
     const SUPABASE_KEY_STORAGE = 'ramli_center_sb_key';
@@ -446,22 +449,36 @@
     }
 
     function getSbConfig() {
-      const url = (document.getElementById('sbUrl')?.value || localStorage.getItem(SUPABASE_URL_KEY) || '').trim().replace(/\/+$/, '');
-      const apiKey = (document.getElementById('sbKey')?.value || localStorage.getItem(SUPABASE_KEY_STORAGE) || '').trim();
+      const url = (
+        document.getElementById('sbUrl')?.value ||
+        localStorage.getItem(SUPABASE_URL_KEY) ||
+        DEFAULT_SUPABASE_URL
+      ).trim().replace(/\/+$/, '');
+
+      const apiKey = (
+        document.getElementById('sbKey')?.value ||
+        localStorage.getItem(SUPABASE_KEY_STORAGE) ||
+        DEFAULT_SUPABASE_KEY
+      ).trim();
+
       return { url, apiKey };
     }
 
     function saveSbConfig() {
       const { url, apiKey } = getSbConfig();
-      localStorage.setItem(SUPABASE_URL_KEY, url);
-      localStorage.setItem(SUPABASE_KEY_STORAGE, apiKey);
+      if (url) localStorage.setItem(SUPABASE_URL_KEY, url);
+      else localStorage.removeItem(SUPABASE_URL_KEY);
+
+      if (apiKey) localStorage.setItem(SUPABASE_KEY_STORAGE, apiKey);
+      else localStorage.removeItem(SUPABASE_KEY_STORAGE);
+
       updateSyncBadge(url && apiKey ? 'جاهز للمزامنة عبر Supabase' : 'محلي فقط (غير مربوط بـ Supabase)');
     }
 
     async function pullFromCloud() {
       const { url, apiKey } = getSbConfig();
       if (!url || !apiKey) {
-        alert('أدخل رابط Supabase ومفتاح anon أولاً.');
+        alert('رابط Supabase أو المفتاح غير متوفر.');
         return;
       }
       updateSyncBadge('جارٍ الجلب من Supabase...');
@@ -473,7 +490,10 @@
             'Authorization': `Bearer ${apiKey}`
           }
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errText}`);
+        }
         const rows = await res.json();
         if (Array.isArray(rows) && rows.length > 0 && rows[0].state && Object.keys(rows[0].state).length > 0) {
           state = { ...emptyState(), ...rows[0].state };
@@ -483,7 +503,7 @@
           updateSyncBadge('السحابة فارغة حالياً — اضغط حفظ في السحابة');
         }
       } catch (err) {
-        console.error(err);
+        console.error('Supabase pull error:', err);
         updateSyncBadge('تعذر الجلب من Supabase');
       }
     }
@@ -491,29 +511,33 @@
     async function pushToCloud() {
       const { url, apiKey } = getSbConfig();
       if (!url || !apiKey) {
-        alert('أدخل رابط Supabase ومفتاح anon أولاً.');
+        alert('رابط Supabase أو المفتاح غير متوفر.');
         return;
       }
       updateSyncBadge('جارٍ الحفظ في Supabase...');
       try {
-        const endpoint = `${url}/rest/v1/finance_state?id=eq.main`;
+        const endpoint = `${url}/rest/v1/finance_state?on_conflict=id`;
         const res = await fetch(endpoint, {
-          method: 'PATCH',
+          method: 'POST',
           headers: {
             'apikey': apiKey,
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
           },
-          body: JSON.stringify({
+          body: JSON.stringify([{
+            id: 'main',
             state: state,
             updated_at: new Date().toISOString()
-          })
+          }])
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errText}`);
+        }
         updateSyncBadge('تم الحفظ في Supabase بنجاح');
       } catch (err) {
-        console.error(err);
+        console.error('Supabase push error:', err);
         updateSyncBadge('تعذر الحفظ في Supabase');
       }
     }
@@ -660,11 +684,12 @@
       tb.innerHTML = items.map(x => `<tr>${rowFn(x)}</tr>`).join('');
     }
 
-    const savedUrl = localStorage.getItem(SUPABASE_URL_KEY) || '';
-    const savedKey = localStorage.getItem(SUPABASE_KEY_STORAGE) || '';
-    if (savedUrl) document.getElementById('sbUrl').value = savedUrl;
-    if (savedKey) document.getElementById('sbKey').value = savedKey;
-    if (savedUrl && savedKey) {
+    const activeUrl = localStorage.getItem(SUPABASE_URL_KEY) || DEFAULT_SUPABASE_URL;
+    const activeKey = localStorage.getItem(SUPABASE_KEY_STORAGE) || DEFAULT_SUPABASE_KEY;
+    document.getElementById('sbUrl').value = activeUrl;
+    document.getElementById('sbKey').value = activeKey;
+
+    if (activeUrl && activeKey) {
       updateSyncBadge('جاهز للمزامنة عبر Supabase');
       pullFromCloud();
     }
