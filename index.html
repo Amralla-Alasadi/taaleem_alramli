@@ -75,22 +75,21 @@
     .sync-panel {
       background: var(--card);
       border: 1px solid var(--border);
-      border-right: 5px solid var(--orange);
+      border-right: 5px solid var(--teal);
       border-radius: 12px;
       padding: 14px;
       margin-bottom: 16px;
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 10px;
       align-items: center;
     }
 
     .sync-panel input {
-      flex: 1 1 280px;
       padding: 9px 12px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       direction: ltr;
       text-align: left;
     }
@@ -227,7 +226,7 @@
         <p>إدارة الحسابات والعُهد والتبرعات والموازنة والأصول (د.ب)</p>
       </div>
       <div class="sync-bar">
-        <span id="syncStatus" class="status-badge">محلي فقط (غير مربوط بسحابة)</span>
+        <span id="syncStatus" class="status-badge">محلي فقط (غير مربوط بـ Supabase)</span>
         <button class="btn-warn" onclick="pullFromCloud()">تحديث من السحابة</button>
         <button class="btn-primary" onclick="pushToCloud()">حفظ في السحابة</button>
       </div>
@@ -236,9 +235,9 @@
 
   <div class="container">
     <div class="sync-panel">
-      <label for="scriptUrl" style="font-weight:700; font-size:0.88rem;">رابط Google Apps Script (/exec):</label>
-      <input id="scriptUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
-      <button class="btn-secondary" onclick="saveScriptUrl()">حفظ الرابط</button>
+      <input id="sbUrl" type="url" placeholder="Supabase Project URL (https://xxx.supabase.co)" />
+      <input id="sbKey" type="password" placeholder="Supabase anon / publishable key" />
+      <button class="btn-secondary" onclick="saveSbConfig()">حفظ بيانات الربط</button>
     </div>
 
     <div class="kpis">
@@ -407,14 +406,15 @@
       <div class="form-grid">
         <input id="openingInput" type="number" step="0.001" placeholder="الرصيد الافتتاحي (د.ب)" />
         <button class="btn-secondary" onclick="saveOpening()">حفظ الرصيد الافتتاحي</button>
-        <button class="btn-danger" onclick="clearAllData()">مسح جميع البيانات</button>
+        <button class="btn-danger" onclick="clearAllData()">مسح جميع البيانات المحلية</button>
       </div>
     </section>
   </div>
 
   <script>
     const LOCAL_KEY = 'ramli_center_finance_v1';
-    const URL_KEY = 'ramli_center_script_url';
+    const SUPABASE_URL_KEY = 'ramli_center_sb_url';
+    const SUPABASE_KEY_STORAGE = 'ramli_center_sb_key';
 
     const emptyState = () => ({
       openingBalance: 0,
@@ -441,55 +441,80 @@
       renderAll();
     }
 
-    function saveScriptUrl() {
-      const url = document.getElementById('scriptUrl').value.trim();
-      localStorage.setItem(URL_KEY, url);
-      updateSyncBadge(url ? 'جاهز للمزامنة السحابية' : 'محلي فقط (غير مربوط بسحابة)');
-    }
-
     function updateSyncBadge(text) {
       document.getElementById('syncStatus').textContent = text;
     }
 
-    async function pushToCloud() {
-      const url = localStorage.getItem(URL_KEY) || document.getElementById('scriptUrl').value.trim();
-      if (!url) {
-        alert('أدخل رابط Google Apps Script أولاً.');
-        return;
-      }
-      updateSyncBadge('جارٍ الحفظ سحابيًا...');
-      try {
-        await fetch(url, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ state })
-        });
-        updateSyncBadge('تم إرسال التحديث للسحابة');
-      } catch (e) {
-        updateSyncBadge('تعذر الإرسال للسحابة');
-      }
+    function getSbConfig() {
+      const url = (document.getElementById('sbUrl')?.value || localStorage.getItem(SUPABASE_URL_KEY) || '').trim().replace(/\/+$/, '');
+      const apiKey = (document.getElementById('sbKey')?.value || localStorage.getItem(SUPABASE_KEY_STORAGE) || '').trim();
+      return { url, apiKey };
+    }
+
+    function saveSbConfig() {
+      const { url, apiKey } = getSbConfig();
+      localStorage.setItem(SUPABASE_URL_KEY, url);
+      localStorage.setItem(SUPABASE_KEY_STORAGE, apiKey);
+      updateSyncBadge(url && apiKey ? 'جاهز للمزامنة عبر Supabase' : 'محلي فقط (غير مربوط بـ Supabase)');
     }
 
     async function pullFromCloud() {
-      const url = localStorage.getItem(URL_KEY) || document.getElementById('scriptUrl').value.trim();
-      if (!url) {
-        alert('أدخل رابط Google Apps Script أولاً.');
+      const { url, apiKey } = getSbConfig();
+      if (!url || !apiKey) {
+        alert('أدخل رابط Supabase ومفتاح anon أولاً.');
         return;
       }
-      updateSyncBadge('جارٍ الجلب من السحابة...');
+      updateSyncBadge('جارٍ الجلب من Supabase...');
       try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data && data.ok && data.state) {
-          state = { ...emptyState(), ...data.state };
+        const endpoint = `${url}/rest/v1/finance_state?id=eq.main&select=state`;
+        const res = await fetch(endpoint, {
+          headers: {
+            'apikey': apiKey,
+            'Authorization': `Bearer ${apiKey}`
+          }
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].state && Object.keys(rows[0].state).length > 0) {
+          state = { ...emptyState(), ...rows[0].state };
           saveLocalState();
           updateSyncBadge('تمت المزامنة بنجاح');
         } else {
-          updateSyncBadge('السحابة فارغة أو غير مهيأة');
+          updateSyncBadge('السحابة فارغة حالياً — اضغط حفظ في السحابة');
         }
-      } catch (e) {
-        updateSyncBadge('تعذر الجلب من السحابة');
+      } catch (err) {
+        console.error(err);
+        updateSyncBadge('تعذر الجلب من Supabase');
+      }
+    }
+
+    async function pushToCloud() {
+      const { url, apiKey } = getSbConfig();
+      if (!url || !apiKey) {
+        alert('أدخل رابط Supabase ومفتاح anon أولاً.');
+        return;
+      }
+      updateSyncBadge('جارٍ الحفظ في Supabase...');
+      try {
+        const endpoint = `${url}/rest/v1/finance_state?id=eq.main`;
+        const res = await fetch(endpoint, {
+          method: 'PATCH',
+          headers: {
+            'apikey': apiKey,
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            state: state,
+            updated_at: new Date().toISOString()
+          })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        updateSyncBadge('تم الحفظ في Supabase بنجاح');
+      } catch (err) {
+        console.error(err);
+        updateSyncBadge('تعذر الحفظ في Supabase');
       }
     }
 
@@ -635,10 +660,12 @@
       tb.innerHTML = items.map(x => `<tr>${rowFn(x)}</tr>`).join('');
     }
 
-    const savedUrl = localStorage.getItem(URL_KEY) || '';
-    if (savedUrl) {
-      document.getElementById('scriptUrl').value = savedUrl;
-      updateSyncBadge('جاهز للمزامنة السحابية');
+    const savedUrl = localStorage.getItem(SUPABASE_URL_KEY) || '';
+    const savedKey = localStorage.getItem(SUPABASE_KEY_STORAGE) || '';
+    if (savedUrl) document.getElementById('sbUrl').value = savedUrl;
+    if (savedKey) document.getElementById('sbKey').value = savedKey;
+    if (savedUrl && savedKey) {
+      updateSyncBadge('جاهز للمزامنة عبر Supabase');
       pullFromCloud();
     }
 
